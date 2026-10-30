@@ -33,9 +33,7 @@ def process_uploaded_doc(uploaded_pdf):
 
 
     chunks=splitter.split_documents(docs)
-
-    if len(chroma_db.get(include=[])['ids'])==0 :
-        chroma_db.add_documents(chunks)
+    chroma_db.add_documents(chunks)
 
 def get_context(user_que):
     res=chroma_db.similarity_search(
