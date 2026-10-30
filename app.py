@@ -34,7 +34,7 @@ if "processed_file" not in st.session_state:
 if uploaded_pdf is not None:
     st.success("pdf uploaded successfully ✅")
     ## hashing the pdf based on content 
-    hash_file=hashlib.md5(uploaded_pdf.getvalue()).hexdigest()
+    hash_file=hashlib.sha256(uploaded_pdf.getvalue()).hexdigest()
     if hash_file not in st.session_state.processed_file:
         try:
             with st.spinner(
@@ -43,7 +43,7 @@ if uploaded_pdf is not None:
                 width="content"
             ):
                 
-                process_uploaded_doc(uploaded_pdf)
+                process_uploaded_doc(uploaded_pdf,hash_file)
             st.session_state.processed_file.add(hash_file)
             st.success("processing successful ✅")
         except Exception as e:
@@ -66,13 +66,16 @@ if uploaded_pdf is not None:
             with st.spinner(text="generating response please wait.......",show_time=True):
                     placeholder.image("https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExYndiNml5NDMyY3Yxa29rNTU2OWt5Yjk4aGZtb2Vrb3p1NnJhYTRxbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/kKtfz1PBx4Dz8lvQLE/giphy.gif",width=100)
 
-                    docs=get_context(user_que)
+                    docs=get_context(user_que,hash_file)
                     context_text="\n\n".join(doc.page_content for doc in docs)
                     prompt_template=PromptTemplate(
                         template="""
 
-                    You are a helpful assistant. Based on the given context and query,
+                    You are a helpful assistant. Based on the given context for the pdf with hash id and query,
         answer the question appropriately.
+
+        question will be asked on behalf of uploaded pdf , and you will get your uploaded pdf context in context 
+        variable , and variable cintains related information for that pdf only so use it ot answer .
 
         Use only the provided context. If the answer is not available
         in the context, say that you cannot find the answer in the provided context.
