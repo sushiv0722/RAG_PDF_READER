@@ -24,3 +24,6 @@ langchain-chroma
 
 ## retrivers
 wikipedia
+
+## hashing 
+hashlib

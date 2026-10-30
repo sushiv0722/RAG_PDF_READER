@@ -6,6 +6,7 @@ from langchain_ollama import ChatOllama
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from src.utility import get_context
+import hashlib
 
 load_dotenv()
 
@@ -27,19 +28,29 @@ st.header("upload your PDF to begin with conversation:")
 
 uploaded_pdf=st.file_uploader("upload pdf",type=['pdf'])
 
+if "processed_file" not in st.session_state:
+    st.session_state.processed_file=set()
+
 if uploaded_pdf is not None:
     st.success("pdf uploaded successfully ✅")
-    try:
-        with st.spinner(
-            text="processing in progress....",
-            show_time=True,
-            width="content"
-        ):
-            process_uploaded_doc(uploaded_pdf)
-        st.success("processing successful ✅")
-    except Exception as e:
-        st.error(f"X error {e}")
-        st.code(traceback.format_exc())
+    ## hashing the pdf based on content 
+    hash_file=hashlib.md5(uploaded_pdf.getvalue()).hexdigest()
+    if hash_file not in st.session_state.processed_file:
+        try:
+            with st.spinner(
+                text="processing in progress....",
+                show_time=True,
+                width="content"
+            ):
+                
+                process_uploaded_doc(uploaded_pdf)
+            st.session_state.processed_file.add(hash_file)
+            st.success("processing successful ✅")
+        except Exception as e:
+            st.error(f"X error {e}")
+            st.code(traceback.format_exc())
+    else:
+        st.success("PDF Already Processed .....✅")
 
     if "chat_started" not in st.session_state:
         st.session_state.chat_started=False
@@ -50,8 +61,10 @@ if uploaded_pdf is not None:
     if st.session_state.chat_started:
         st.write("Ask you question....")
         user_que=st.chat_input("Message:")
+        placeholder=st.empty()
         if user_que :
             with st.spinner(text="generating response please wait.......",show_time=True):
+                    placeholder.image("https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExYndiNml5NDMyY3Yxa29rNTU2OWt5Yjk4aGZtb2Vrb3p1NnJhYTRxbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/kKtfz1PBx4Dz8lvQLE/giphy.gif",width=100)
 
                     docs=get_context(user_que)
                     context_text="\n\n".join(doc.page_content for doc in docs)
@@ -74,4 +87,4 @@ if uploaded_pdf is not None:
                     )
                     chain=prompt_template | model | parser
                     res=chain.invoke({'query':user_que,'context':context_text})
-                    st.markdown(res)
+                    placeholder.markdown(res)
